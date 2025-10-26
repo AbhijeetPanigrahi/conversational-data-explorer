@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { queryGemini, mockQueryGemini } from "../services/aiService";
+import { detectColumnTypes, formatDate } from "../utils/helpers";
 
 function ChatInterface({ data }) {
   const [messages, setMessages] = useState([]);

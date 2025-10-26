@@ -1,4 +1,9 @@
 import React from "react";
+import {
+  formatDate,
+  truncateString,
+  detectColumnTypes,
+} from "../utils/helpers";
 
 function DataTable({ data }) {
   if (!data || data.length === 0) {
@@ -7,6 +12,7 @@ function DataTable({ data }) {
 
   // Get column headers from the first data item
   const columns = Object.keys(data[0]);
+  const columnTypes = detectColumnTypes(data);
 
   /*
   Two levels of .map():
@@ -31,18 +37,16 @@ function DataTable({ data }) {
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {data.slice(0, 100).map((row, rowIndex) => (
-              <tr
-                key={rowIndex}
-                className={rowIndex % 2 === 0 ? "bg-white" : "bg-gray-50"}
-              >
-                {columns.map((column, colIndex) => (
-                  <td
-                    key={colIndex}
-                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                  >
-                    {row[column]?.toString() || ""}
+          <tbody>
+            {data.map((row, rowIndex) => (
+              <tr key={rowIndex}>
+                {columns.map((col) => (
+                  <td key={`${rowIndex}-${col}`}>
+                    {columnTypes[col] === "date"
+                      ? formatDate(row[col])
+                      : typeof row[col] === "object"
+                      ? truncateString(JSON.stringify(row[col]), 30)
+                      : row[col]}
                   </td>
                 ))}
               </tr>
