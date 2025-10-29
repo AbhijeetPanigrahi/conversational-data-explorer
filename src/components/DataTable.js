@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { detectColumnTypes } from "../utils/helpers";
-
+import { exportToCSV, exportToJSON } from "../utils/exportUtils";
 /**
  * DataTable - fixed-height preview with horizontal scroll for wide tables.
  * - Constrains preview width so the page doesn't scroll horizontally.
@@ -11,6 +11,7 @@ function DataTable({
   height = 400,
   columnMinWidth = 120,
   containerMaxWidth = 900,
+  exportData = null,
 }) {
   const safeData = Array.isArray(data)
     ? data.filter((r) => r && typeof r === "object")
@@ -31,6 +32,9 @@ function DataTable({
   // total minimum table width based on columns (cap it to avoid extreme sizes)
   const calculatedMin = columns.length * columnMinWidth;
   const tableMinWidth = Math.max(calculatedMin, 600);
+
+  const exportTarget =
+    Array.isArray(exportData) && exportData.length ? exportData : safeData;
 
   return (
     // Constrain the preview area so the page won't scroll left-right
@@ -53,8 +57,24 @@ function DataTable({
         }}
       >
         <div style={{ fontWeight: 600 }}>Dataset Preview</div>
-        <div style={{ fontSize: 13, color: "#6b7280" }}>
-          Showing {safeData.length} rows · {columns.length} columns
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <button
+            onClick={() => exportToCSV(exportTarget, "filtered-data.csv")}
+            className="px-3 py-1 bg-blue-600 text-white rounded-md text-sm"
+            title="Export filtered dataset as CSV"
+          >
+            Export CSV
+          </button>
+          <button
+            onClick={() => exportToJSON(exportTarget, "filtered-data.json")}
+            className="px-3 py-1 bg-gray-100 text-gray-800 rounded-md text-sm"
+            title="Export filtered dataset as JSON"
+          >
+            Export JSON
+          </button>
+          <div style={{ fontSize: 13, color: "#6b7280" }}>
+            Showing {safeData.length} rows · {columns.length} columns
+          </div>
         </div>
       </div>
 

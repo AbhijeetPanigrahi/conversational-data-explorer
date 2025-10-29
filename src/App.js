@@ -108,7 +108,12 @@ function App() {
                     </div>
                   </div>
 
-                  <DataTable data={tableData} height={360} />
+                  <DataTable
+                    data={tableData}
+                    height={360}
+                    columnMinWidth={120}
+                    exportData={filteredData}
+                  />
 
                   <div className="mt-3 flex items-center gap-3">
                     {!showAll && canLoadMore && (

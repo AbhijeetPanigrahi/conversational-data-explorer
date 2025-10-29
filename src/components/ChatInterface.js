@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import { queryGemini, mockQueryGemini } from "../services/aiService";
 import { detectColumnTypes, formatDate } from "../utils/helpers";
+import { exportToTXT, exportToJSON } from "../utils/exportUtils";
 
-function ChatInterface({ data }) {
-  const [messages, setMessages] = useState([]);
+function ChatInterface({ data = [] }) {
   const [input, setInput] = useState("");
+  const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
@@ -58,13 +59,49 @@ function ChatInterface({ data }) {
     }
   };
 
-  // Avoid logging secrets in production
+  // helper to build plain-text transcript
+  const buildTranscriptText = () =>
+    messages
+      .map(
+        (m) =>
+          `${
+            m.role === "user"
+              ? "You"
+              : m.role === "assistant"
+              ? "Assistant"
+              : m.role
+          }: ${m.text}`
+      )
+      .join("\n\n");
 
   return (
     <div className="bg-white rounded-lg shadow-md p-4 mt-4 flex flex-col h-[500px]">
-      <h2 className="text-lg font-semibold mb-4">
-        Ask Questions About Your Data
-      </h2>
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-lg font-medium text-gray-800">
+          Chat (uses visible dataset)
+        </h3>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            onClick={() =>
+              exportToTXT(buildTranscriptText(), "chat-transcript.txt")
+            }
+            className="px-3 py-1 bg-gray-100 text-gray-800 rounded-md text-sm"
+            title="Download chat as text"
+          >
+            Export TXT
+          </button>
+          <button
+            onClick={() => exportToJSON(messages, "chat-transcript.json")}
+            className="px-3 py-1 bg-blue-600 text-white rounded-md text-sm"
+            title="Download chat as JSON"
+          >
+            Export JSON
+          </button>
+        </div>
+        <div className="text-sm text-gray-500">
+          {data.length} rows in context
+        </div>
+      </div>
 
       <div className="flex-1 overflow-y-auto mb-4 space-y-4">
         {messages.length === 0 ? (
