@@ -58,8 +58,7 @@ function ChatInterface({ data }) {
     }
   };
 
-  // Debug: Show API key status
-  console.log("Gemini API Key:", process.env.REACT_APP_GEMINI_API_KEY);
+  // Avoid logging secrets in production
 
   return (
     <div className="bg-white rounded-lg shadow-md p-4 mt-4 flex flex-col h-[500px]">

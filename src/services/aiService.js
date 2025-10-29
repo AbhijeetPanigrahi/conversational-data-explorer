@@ -10,7 +10,8 @@ const genAI = new GoogleGenerativeAI(API_KEY);
 export const queryGemini = async (prompt, data) => {
   try {
     // For safety, limit the amount of data sent to the API
-    const limitedData = data.slice(0, 100);
+    const sourceData = Array.isArray(data) ? data : [];
+    const limitedData = sourceData.slice(0, 100);
 
     // Convert data to a string format that Gemini can process
     const dataString = JSON.stringify(limitedData, null, 2);
@@ -36,13 +37,19 @@ export const mockQueryGemini = async (prompt, data) => {
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 1000));
 
+  // Ensure data is a usable array
+  const rows = Array.isArray(data) ? data : [];
+  if (rows.length === 0) {
+    return "I need some rows to analyze. Please upload data first.";
+  }
+
   const lowerPrompt = prompt.toLowerCase();
 
   // Simple pattern matching for demo purposes
   if (lowerPrompt.includes("average") || lowerPrompt.includes("mean")) {
     // Find numeric columns to calculate average
-    const numericColumns = Object.keys(data[0]).filter((key) => {
-      return !isNaN(parseFloat(data[0][key]));
+    const numericColumns = Object.keys(rows[0]).filter((key) => {
+      return !isNaN(parseFloat(rows[0][key]));
     });
 
     if (numericColumns.length === 0) {
@@ -53,7 +60,7 @@ export const mockQueryGemini = async (prompt, data) => {
     let targetColumn = numericColumns[0];
 
     // Try to find a more specific column based on the prompt
-    for (const column of Object.keys(data[0])) {
+    for (const column of Object.keys(rows[0])) {
       if (lowerPrompt.includes(column.toLowerCase())) {
         targetColumn = column;
         break;
@@ -61,20 +68,20 @@ export const mockQueryGemini = async (prompt, data) => {
     }
 
     // Calculate average
-    const sum = data.reduce(
+    const sum = rows.reduce(
       (acc, row) => acc + parseFloat(row[targetColumn] || 0),
       0
     );
-    const average = sum / data.length;
+    const average = sum / rows.length;
 
     return `The average ${targetColumn} is ${average.toFixed(2)}.`;
   }
 
   // Simple pattern matching for "email address of [name]"
   const emailMatch = prompt.match(/email address of (.+)/i);
-  if (emailMatch && data && Array.isArray(data)) {
+  if (emailMatch && rows.length > 0) {
     const name = emailMatch[1].trim().toLowerCase();
-    const user = data.find(
+    const user = rows.find(
       (row) => row.name && row.name.toLowerCase() === name
     );
     if (user && user.email) {

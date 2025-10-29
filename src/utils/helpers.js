@@ -29,9 +29,11 @@ export const isDateString = (str) => {
 
 // Detect column types from data
 export const detectColumnTypes = (data) => {
-  if (!data || data.length === 0) return {};
+  if (!Array.isArray(data) || data.length === 0) return {};
 
-  const sampleRow = data[0];
+  // find first row that is a non-null object
+  const sampleRow = data.find((r) => r && typeof r === "object");
+  if (!sampleRow) return {};
   const columnTypes = {};
 
   Object.keys(sampleRow).forEach((column) => {

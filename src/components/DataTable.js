@@ -1,66 +1,153 @@
-import React from "react";
-import {
-  formatDate,
-  truncateString,
-  detectColumnTypes,
-} from "../utils/helpers";
+import React, { useMemo } from "react";
+import { detectColumnTypes } from "../utils/helpers";
 
-function DataTable({ data }) {
-  if (!data || data.length === 0) {
-    return null;
-  }
+/**
+ * DataTable - fixed-height preview with horizontal scroll for wide tables.
+ * - Constrains preview width so the page doesn't scroll horizontally.
+ * - Horizontal scroll is confined to the inner table container.
+ */
+function DataTable({
+  data = [],
+  height = 400,
+  columnMinWidth = 120,
+  containerMaxWidth = 900,
+}) {
+  const safeData = Array.isArray(data)
+    ? data.filter((r) => r && typeof r === "object")
+    : [];
 
-  // Get column headers from the first data item
-  const columns = Object.keys(data[0]);
-  const columnTypes = detectColumnTypes(data);
+  const firstRow = useMemo(
+    () => safeData.find((r) => r && typeof r === "object") || null,
+    [safeData]
+  );
+  const columns = useMemo(
+    () => (firstRow ? Object.keys(firstRow) : []),
+    [firstRow]
+  );
+  useMemo(() => detectColumnTypes(safeData), [safeData]);
 
-  /*
-  Two levels of .map():
-  - One for columns in header
-  - One for rows and cells in body
-  */
+  if (!safeData.length || !columns.length) return null;
+
+  // total minimum table width based on columns (cap it to avoid extreme sizes)
+  const calculatedMin = columns.length * columnMinWidth;
+  const tableMinWidth = Math.max(calculatedMin, 600);
+
   return (
-    <div className="overflow-x-auto bg-white rounded-lg shadow-md p-4 mt-4">
-      <h2 className="text-lg font-semibold mb-4">Dataset Preview</h2>
-      <div className="max-h-96 overflow-y-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50 sticky top-0">
-            <tr>
-              {columns.map((column, index) => (
-                <th
-                  key={index}
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {column}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((row, rowIndex) => (
-              <tr key={rowIndex}>
+    // Constrain the preview area so the page won't scroll left-right
+    <div
+      className="bg-white rounded-lg shadow-md p-4"
+      style={{
+        overflowX: "hidden",
+        width: "100%",
+        maxWidth: containerMaxWidth, // <- limit preview width
+        boxSizing: "border-box",
+        margin: "0 auto",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 8,
+        }}
+      >
+        <div style={{ fontWeight: 600 }}>Dataset Preview</div>
+        <div style={{ fontSize: 13, color: "#6b7280" }}>
+          Showing {safeData.length} rows · {columns.length} columns
+        </div>
+      </div>
+
+      {/* horizontal scroll container (constrained to containerMaxWidth) */}
+      <div
+        style={{
+          width: "100%",
+          overflowX: "auto", // horizontal scroll confined here
+          border: "1px solid #e6e6e6",
+          borderRadius: 6,
+        }}
+      >
+        {/* vertical scroll area for rows */}
+        <div style={{ maxHeight: height, overflowY: "auto", width: "100%" }}>
+          <table
+            style={{
+              minWidth: tableMinWidth, // can exceed container and cause inner scrollbar
+              borderCollapse: "separate",
+              width: "auto", // allow overflow
+              tableLayout: "fixed",
+            }}
+          >
+            <thead>
+              <tr>
                 {columns.map((col) => (
-                  <td key={`${rowIndex}-${col}`}>
-                    {columnTypes[col] === "date"
-                      ? formatDate(row[col])
-                      : typeof row[col] === "object"
-                      ? truncateString(JSON.stringify(row[col]), 30)
-                      : row[col]}
-                  </td>
+                  <th
+                    key={col}
+                    style={{
+                      position: "sticky",
+                      top: 0,
+                      background: "#ffffff",
+                      borderBottom: "1px solid #eef2f7",
+                      padding: "10px 12px",
+                      textAlign: "left",
+                      fontSize: 13,
+                      color: "#374151",
+                      textTransform: "capitalize",
+                      minWidth: columnMinWidth,
+                      maxWidth: columnMinWidth,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {col}
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody>
+              {safeData.map((row, rowIndex) => (
+                <tr
+                  key={rowIndex}
+                  style={{
+                    background: rowIndex % 2 === 0 ? "#ffffff" : "#fbfbfb",
+                    borderBottom: "1px solid #f3f4f6",
+                  }}
+                >
+                  {columns.map((col) => {
+                    const cell = row[col];
+                    const text =
+                      cell === null || cell === undefined
+                        ? ""
+                        : typeof cell === "object"
+                        ? JSON.stringify(cell)
+                        : String(cell);
+                    return (
+                      <td
+                        key={`${rowIndex}-${col}`}
+                        style={{
+                          padding: "8px 12px",
+                          fontSize: 13,
+                          color: "#4b5563",
+                          maxWidth: columnMinWidth,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                        title={text}
+                      >
+                        {text}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-      {data.length > 100 && (
-        <p className="text-sm text-gray-500 mt-2">
-          Showing first 100 rows of {data.length} total rows
-        </p>
-      )}
     </div>
   );
 }
 
-export default DataTable;
+export default React.memo(DataTable);
