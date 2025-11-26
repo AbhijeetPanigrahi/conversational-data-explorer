@@ -6,6 +6,7 @@ import Filters from "./components/Filters";
 import { applyFilters } from "./utils/filterUtils";
 import { detectColumnTypes } from "./utils/helpers";
 import { saveDataToLocalStorage } from "./services/dataService";
+import ChartBuilder from "./components/ChartBuilder";
 
 function App() {
   const [data, setData] = useState(() => {
@@ -115,6 +116,17 @@ function App() {
                     exportData={filteredData}
                   />
 
+                  {/* Smart visualization panel */}
+                  <ChartBuilder
+                    data={filteredData || []}
+                    onUseInChat={(cfg, agg) => {
+                      // optional: insert a message into chat with summary (if ChatInterface supports callback)
+                      console.log("Use in chat requested:", cfg);
+                    }}
+                  />
+
+                  <ChatInterface data={filteredData || []} />
+
                   <div className="mt-3 flex items-center gap-3">
                     {!showAll && canLoadMore && (
                       <button
@@ -138,11 +150,6 @@ function App() {
                     >
                       {showAll ? "Show preview" : "Show all"}
                     </button>
-                  </div>
-
-                  {/* Chat moved below the data preview */}
-                  <div className="mt-6">
-                    <ChatInterface data={filteredData || []} />
                   </div>
                 </>
               ) : (
